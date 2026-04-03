@@ -286,17 +286,21 @@ class ScenarioFixtureFactory:
         suffix = rng.randint(100, 999)
         callsign = f"{rng.choice(airline_prefixes)}{suffix}"
 
-        # Initial aircraft state on approach
+        import math
+
+        altitude_ft = 5000.0
+        distance_to_runway = altitude_ft / math.tan(math.radians(3.0))
+
         initial_state = {
             "phase": LifecyclePhase.APPROACH,
             "aircraft": {
                 callsign: {
                     "callsign": callsign,
-                    "x_ft": rng.uniform(-5000.0, 5000.0),
-                    "y_ft": rng.uniform(-5000.0, 5000.0),
-                    "heading_deg": rng.uniform(0.0, 360.0),
-                    "altitude_ft": rng.uniform(2000.0, 3000.0),
-                    "speed_kt": rng.uniform(150.0, 250.0),
+                    "x_ft": rng.uniform(-500.0, 500.0),
+                    "y_ft": distance_to_runway + rng.uniform(-500.0, 500.0),
+                    "heading_deg": 270.0,
+                    "altitude_ft": altitude_ft,
+                    "speed_kt": 140.0,
                     "phase": LifecyclePhase.APPROACH,
                     "assigned_runway": "RWY27L",
                     "assigned_gate": "GATE_B2",
@@ -359,16 +363,21 @@ class ScenarioFixtureFactory:
             f"{rng.choice(airline_prefixes)}{rng.randint(100, 999)}" for _ in range(3)
         ]
 
+        import math
+
+        altitude_ft = 5000.0
+        distance_to_runway = altitude_ft / math.tan(math.radians(3.0))
+
         initial_state = {
             "phase": LifecyclePhase.APPROACH,
             "aircraft": {
                 callsigns[0]: {
                     "callsign": callsigns[0],
-                    "x_ft": rng.uniform(-5000.0, 5000.0),
-                    "y_ft": rng.uniform(-5000.0, 5000.0),
-                    "heading_deg": rng.uniform(0.0, 360.0),
-                    "altitude_ft": rng.uniform(2000.0, 3000.0),
-                    "speed_kt": rng.uniform(150.0, 250.0),
+                    "x_ft": rng.uniform(-500.0, 500.0),
+                    "y_ft": distance_to_runway + rng.uniform(-500.0, 500.0),
+                    "heading_deg": 270.0,
+                    "altitude_ft": altitude_ft,
+                    "speed_kt": 140.0,
                     "phase": LifecyclePhase.APPROACH,
                     "assigned_runway": "RWY27L",
                     "assigned_gate": "GATE_B2",
@@ -376,9 +385,9 @@ class ScenarioFixtureFactory:
                 },
                 callsigns[1]: {
                     "callsign": callsigns[1],
-                    "x_ft": rng.uniform(-5000.0, 5000.0),
-                    "y_ft": rng.uniform(-5000.0, 5000.0),
-                    "heading_deg": rng.uniform(0.0, 360.0),
+                    "x_ft": rng.uniform(-100.0, 100.0),
+                    "y_ft": rng.uniform(-100.0, 100.0),
+                    "heading_deg": 270.0,
                     "altitude_ft": 0.0,
                     "speed_kt": 20.0,
                     "phase": LifecyclePhase.TAXI_IN,
@@ -390,7 +399,7 @@ class ScenarioFixtureFactory:
                     "callsign": callsigns[2],
                     "x_ft": 0.0,
                     "y_ft": 0.0,
-                    "heading_deg": rng.uniform(0.0, 360.0),
+                    "heading_deg": 270.0,
                     "altitude_ft": 0.0,
                     "speed_kt": 0.0,
                     "phase": LifecyclePhase.AT_GATE,
@@ -438,17 +447,21 @@ class ScenarioFixtureFactory:
         suffix = rng.randint(100, 999)
         callsign = f"{rng.choice(airline_prefixes)}{suffix}"
 
-        # Initial aircraft state on approach
+        import math
+
+        altitude_ft = 5000.0
+        distance_to_runway = altitude_ft / math.tan(math.radians(3.0))
+
         initial_state = {
             "phase": LifecyclePhase.APPROACH,
             "aircraft": {
                 callsign: {
                     "callsign": callsign,
-                    "x_ft": rng.uniform(-5000.0, 5000.0),
-                    "y_ft": rng.uniform(-5000.0, 5000.0),
-                    "heading_deg": rng.uniform(0.0, 360.0),
-                    "altitude_ft": rng.uniform(2000.0, 3000.0),
-                    "speed_kt": rng.uniform(150.0, 250.0),
+                    "x_ft": rng.uniform(-500.0, 500.0),
+                    "y_ft": distance_to_runway + rng.uniform(-500.0, 500.0),
+                    "heading_deg": 270.0,
+                    "altitude_ft": altitude_ft,
+                    "speed_kt": 140.0,
                     "phase": LifecyclePhase.APPROACH,
                     "assigned_runway": "RWY27L",
                     "assigned_gate": "GATE_C3",

@@ -64,8 +64,8 @@ class AircraftState(BaseModel):
     model_config = {"extra": "forbid"}
 
     callsign: str = Field(..., min_length=1, max_length=20)
-    x_ft: float = Field(..., ge=-10000.0, le=10000.0)
-    y_ft: float = Field(..., ge=-10000.0, le=10000.0)
+    x_ft: float = Field(..., ge=-200000.0, le=200000.0)
+    y_ft: float = Field(..., ge=-200000.0, le=200000.0)
     heading_deg: float = Field(..., ge=0.0, le=360.0)
     altitude_ft: float = Field(..., ge=0.0, le=45000.0)
     speed_kt: float = Field(..., ge=0.0, le=600.0)

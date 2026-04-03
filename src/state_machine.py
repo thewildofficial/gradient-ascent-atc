@@ -145,11 +145,38 @@ class FullLifecycleStateMachine:
             initial_state_dict = None
 
         if initial_state_dict:
-            # Use fixture-loaded initial state
             phase = LifecyclePhase(initial_state_dict["phase"])
             aircraft_dict = {}
             for callsign, ac_data in initial_state_dict.get("aircraft", {}).items():
                 aircraft_dict[callsign] = AircraftState(**ac_data)
+
+            metadata = initial_state_dict.get("metadata", {})
+
+            approach_node = self._find_first_node_by_type("approach_fix")
+            threshold_node = self._find_first_node_by_type("landing_threshold")
+            gate_node = self._find_first_node_by_type("gate")
+            stand_node = self._find_first_node_by_type("stand")
+
+            runway_heading = 270.0
+            if self._schema.runways:
+                runway_heading = self._schema.runways[0].get("heading_deg", 270.0)
+
+            metadata.setdefault(
+                "approach_node", approach_node.id if approach_node else "APP_FIX_27L"
+            )
+            metadata.setdefault(
+                "threshold_node", threshold_node.id if threshold_node else "THR_27L"
+            )
+            metadata.setdefault("gate_node", gate_node.id if gate_node else "GATE_A1")
+            metadata.setdefault(
+                "stand_node", stand_node.id if stand_node else "STAND_101"
+            )
+            metadata.setdefault("runway_heading", runway_heading)
+            metadata.setdefault("ground_frequency_confirmed", False)
+            metadata.setdefault("pushback_direction", None)
+            metadata.setdefault("taxi_route", [])
+            metadata.setdefault("line_up_confirmed", False)
+            metadata.setdefault("takeoff_confirmed", False)
 
             self._state = LifecycleState(
                 phase=phase,
@@ -158,7 +185,7 @@ class FullLifecycleStateMachine:
                 step_count=0,
                 task_id=task_id,
                 completed_phases=[],
-                metadata=initial_state_dict.get("metadata", {}),
+                metadata=metadata,
             )
 
             # Set current_node based on phase
@@ -184,13 +211,11 @@ class FullLifecycleStateMachine:
             gate_node = self._find_first_node_by_type("gate")
             stand_node = self._find_first_node_by_type("stand")
 
-            # Initialize aircraft at approach position
-            # Clamp to AircraftState validation limits (-10000 to 10000)
             if approach_node:
-                x = max(-10000.0, min(10000.0, approach_node.x_ft))
-                y = max(-10000.0, min(10000.0, approach_node.y_ft))
+                x = approach_node.x_ft
+                y = approach_node.y_ft
             else:
-                x, y = 0.0, 5000.0
+                x, y = 0.0, 95406.0
 
             # Get runway heading from first runway
             runway_heading = 270.0
@@ -499,12 +524,11 @@ class FullLifecycleStateMachine:
     # ------------------------------------------------------------------
 
     def _step_approach(self, action: Action) -> tuple[float, list[str]]:
-        """Handle APPROACH phase step."""
+        """Handle APPROACH phase step with realistic 3° glide slope physics."""
         aircraft = self._get_primary_aircraft()
         if not aircraft:
             return 0.0, ["no_aircraft"]
 
-        # Check if altitude has reached landing threshold
         if aircraft.altitude_ft <= LANDING_ALTITUDE_THRESHOLD_FT:
             next_phase = LifecyclePhase.LANDING
             self._state.phase = next_phase
@@ -512,13 +536,20 @@ class FullLifecycleStateMachine:
             self._enter_phase(next_phase)
             return 0.1, []
 
-        # Continue descent - simplified physics
-        descent_rate_fpm = 1500.0  # Standard descent rate
-        descent_ft = descent_rate_fpm * DEFAULT_DT_S / 60.0
-        aircraft.altitude_ft = max(0.0, aircraft.altitude_ft - descent_ft)
+        import math
 
-        # Update position on glide path (simplified - moves toward threshold)
-        aircraft.y_ft -= 100.0 * DEFAULT_DT_S  # Moving toward runway
+        GROUND_SPEED_KTS = 140.0
+        FT_PER_NM = 6076.12
+        GLIDE_SLOPE_DEG = 3.0
+
+        ground_speed_fps = GROUND_SPEED_KTS * FT_PER_NM / 3600.0
+        descent_rate_fps = ground_speed_fps * math.tan(math.radians(GLIDE_SLOPE_DEG))
+
+        aircraft.y_ft -= ground_speed_fps * DEFAULT_DT_S
+        aircraft.altitude_ft = max(
+            0.0, aircraft.altitude_ft - descent_rate_fps * DEFAULT_DT_S
+        )
+        aircraft.speed_kt = GROUND_SPEED_KTS
 
         return 0.0, []
 

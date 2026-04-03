@@ -194,7 +194,7 @@ class TestIntegratedFullLifecycle:
             LifecyclePhase.DOCKING,
         }
 
-        max_steps = 500
+        max_steps = 1000
         for step in range(max_steps):
             if sm.is_terminal(state):
                 break
@@ -248,7 +248,7 @@ class TestIntegratedFullLifecycle:
 
         phases_reached = []
         step_index = 0
-        max_steps = 500
+        max_steps = 1000
         for _ in range(max_steps):
             if sm.is_terminal(state):
                 break
@@ -297,7 +297,7 @@ class TestIntegratedFullLifecycle:
 
         reached_at_gate = False
         at_gate_entry_step = 0
-        max_steps = 500
+        max_steps = 1000
 
         for step in range(max_steps):
             if sm.is_terminal(state):
