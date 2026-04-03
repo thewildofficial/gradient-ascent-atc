@@ -1,0 +1,123 @@
+{
+  "airport_code": "DUMMY",
+  "nodes": {
+    "APP_FIX": {
+      "id": "APP_FIX",
+      "node_type": "approach_fix",
+      "x_ft": 0.0,
+      "y_ft": 10000.0,
+      "name": "Approach Fix"
+    },
+    "GLIDE": {
+      "id": "GLIDE",
+      "node_type": "glide_path",
+      "x_ft": 0.0,
+      "y_ft": 5000.0
+    },
+    "THR": {
+      "id": "THR",
+      "node_type": "landing_threshold",
+      "x_ft": 0.0,
+      "y_ft": 0.0
+    },
+    "RWY": {
+      "id": "RWY",
+      "node_type": "runway_center",
+      "x_ft": 0.0,
+      "y_ft": -1500.0
+    },
+    "EXIT1": {
+      "id": "EXIT1",
+      "node_type": "exit_taxiway",
+      "x_ft": -200.0,
+      "y_ft": -1500.0
+    },
+    "EXIT2": {
+      "id": "EXIT2",
+      "node_type": "exit_taxiway",
+      "x_ft": 200.0,
+      "y_ft": -1500.0
+    },
+    "HS1": {
+      "id": "HS1",
+      "node_type": "hold_short",
+      "x_ft": -200.0,
+      "y_ft": -1800.0
+    },
+    "HS2": {
+      "id": "HS2",
+      "node_type": "hold_short",
+      "x_ft": 200.0,
+      "y_ft": -1800.0
+    },
+    "TAXI": {
+      "id": "TAXI",
+      "node_type": "taxi_point",
+      "x_ft": -500.0,
+      "y_ft": -2500.0
+    },
+    "DQ": {
+      "id": "DQ",
+      "node_type": "departure_queue",
+      "x_ft": -500.0,
+      "y_ft": -3000.0
+    },
+    "RE": {
+      "id": "RE",
+      "node_type": "runway_entry",
+      "x_ft": -500.0,
+      "y_ft": -2000.0
+    },
+    "PB": {
+      "id": "PB",
+      "node_type": "pushback_spot",
+      "x_ft": -1000.0,
+      "y_ft": -3500.0
+    },
+    "STAND": {
+      "id": "STAND",
+      "node_type": "stand",
+      "x_ft": -1000.0,
+      "y_ft": -4000.0
+    },
+    "GATE": {
+      "id": "GATE",
+      "node_type": "gate",
+      "x_ft": -1000.0,
+      "y_ft": -4500.0
+    }
+  },
+  "edges": [
+    {"from_node": "APP_FIX", "to_node": "GLIDE", "movement_type": "approach", "distance_ft": 5000.0, "max_speed_kt": 200.0},
+    {"from_node": "GLIDE", "to_node": "THR", "movement_type": "landing", "distance_ft": 5000.0, "max_speed_kt": 140.0},
+    {"from_node": "THR", "to_node": "RWY", "movement_type": "taxi", "distance_ft": 1500.0, "max_speed_kt": 20.0},
+    {"from_node": "RWY", "to_node": "EXIT1", "movement_type": "exit_runway", "distance_ft": 200.0, "max_speed_kt": 30.0, "one_way": true},
+    {"from_node": "RWY", "to_node": "EXIT2", "movement_type": "exit_runway", "distance_ft": 200.0, "max_speed_kt": 30.0, "one_way": true},
+    {"from_node": "EXIT1", "to_node": "HS1", "movement_type": "taxi", "distance_ft": 300.0, "max_speed_kt": 20.0},
+    {"from_node": "EXIT2", "to_node": "HS2", "movement_type": "taxi", "distance_ft": 300.0, "max_speed_kt": 20.0},
+    {"from_node": "HS1", "to_node": "TAXI", "movement_type": "taxi", "distance_ft": 700.0, "max_speed_kt": 20.0},
+    {"from_node": "HS2", "to_node": "TAXI", "movement_type": "taxi", "distance_ft": 700.0, "max_speed_kt": 20.0},
+    {"from_node": "DQ", "to_node": "RE", "movement_type": "queue_join", "distance_ft": 1000.0, "max_speed_kt": 15.0},
+    {"from_node": "DQ", "to_node": "TAXI", "movement_type": "taxi", "distance_ft": 500.0, "max_speed_kt": 20.0},
+    {"from_node": "RE", "to_node": "RWY", "movement_type": "runway_transition", "distance_ft": 200.0, "max_speed_kt": 30.0, "one_way": true},
+    {"from_node": "TAXI", "to_node": "PB", "movement_type": "taxi", "distance_ft": 1000.0, "max_speed_kt": 15.0},
+    {"from_node": "PB", "to_node": "STAND", "movement_type": "pushback", "distance_ft": 500.0, "max_speed_kt": 5.0},
+    {"from_node": "STAND", "to_node": "GATE", "movement_type": "taxi", "distance_ft": 500.0, "max_speed_kt": 10.0}
+  ],
+  "runways": [
+    {
+      "id": "RWY09",
+      "threshold_x": 0.0,
+      "threshold_y": 0.0,
+      "heading_deg": 90.0,
+      "length_ft": 3000.0
+    }
+  ],
+  "gates": [
+    {"id": "G1", "x_ft": -1000.0, "y_ft": -4500.0, "heading_deg": 90.0, "gate_number": "1"}
+  ],
+  "metadata": {
+    "code": "DUMMY",
+    "name": "Dummy Airport"
+  }
+}

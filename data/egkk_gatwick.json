@@ -1,0 +1,299 @@
+{
+  "airport_code": "EGKK",
+  "nodes": {
+    "APP_FIX_27L": {
+      "id": "APP_FIX_27L",
+      "node_type": "approach_fix",
+      "x_ft": 0.0,
+      "y_ft": 40000.0,
+      "name": "Gatwick 27L Approach Fix",
+      "annotations": {"runway": "27L"}
+    },
+    "GLIDE_27L": {
+      "id": "GLIDE_27L",
+      "node_type": "glide_path",
+      "x_ft": 0.0,
+      "y_ft": 15000.0,
+      "name": "Gatwick 27L Glide Path",
+      "annotations": {"runway": "27L", "glide_angle": "3.0"}
+    },
+    "THR_27L": {
+      "id": "THR_27L",
+      "node_type": "landing_threshold",
+      "x_ft": 0.0,
+      "y_ft": 0.0,
+      "name": "Gatwick 27L Threshold",
+      "annotations": {"runway": "27L", "threshold_marking": "09R"}
+    },
+    "RWY_CENTER_27L": {
+      "id": "RWY_CENTER_27L",
+      "node_type": "runway_center",
+      "x_ft": 0.0,
+      "y_ft": -2500.0,
+      "name": "Gatwick 27L Center",
+      "annotations": {"runway": "27L"}
+    },
+    "EXIT_E": {
+      "id": "EXIT_E",
+      "node_type": "exit_taxiway",
+      "x_ft": -500.0,
+      "y_ft": -2500.0,
+      "name": "Eastern Exit",
+      "annotations": {"runway": "27L"}
+    },
+    "EXIT_W": {
+      "id": "EXIT_W",
+      "node_type": "exit_taxiway",
+      "x_ft": 500.0,
+      "y_ft": -2500.0,
+      "name": "Western Exit",
+      "annotations": {"runway": "27L"}
+    },
+    "HS_A": {
+      "id": "HS_A",
+      "node_type": "hold_short",
+      "x_ft": -500.0,
+      "y_ft": -2800.0,
+      "name": "Hold Short A",
+      "annotations": {"runway": "27L", "position": "A"}
+    },
+    "HS_B": {
+      "id": "HS_B",
+      "node_type": "hold_short",
+      "x_ft": 500.0,
+      "y_ft": -2800.0,
+      "name": "Hold Short B",
+      "annotations": {"runway": "27L", "position": "B"}
+    },
+    "TQ_E": {
+      "id": "TQ_E",
+      "node_type": "taxi_point",
+      "x_ft": -1000.0,
+      "y_ft": -3500.0,
+      "name": "Taxiway Echo",
+      "annotations": {"taxiway": "Echo"}
+    },
+    "TQ_W": {
+      "id": "TQ_W",
+      "node_type": "taxi_point",
+      "x_ft": 1000.0,
+      "y_ft": -3500.0,
+      "name": "Taxiway Whiskey",
+      "annotations": {"taxiway": "Whiskey"}
+    },
+    "DQ_E": {
+      "id": "DQ_E",
+      "node_type": "departure_queue",
+      "x_ft": -1000.0,
+      "y_ft": -4000.0,
+      "name": "Departure Queue East",
+      "annotations": {"runway": "27L", "queue": "east"}
+    },
+    "DQ_W": {
+      "id": "DQ_W",
+      "node_type": "departure_queue",
+      "x_ft": 1000.0,
+      "y_ft": -4000.0,
+      "name": "Departure Queue West",
+      "annotations": {"runway": "27L", "queue": "west"}
+    },
+    "RE_E": {
+      "id": "RE_E",
+      "node_type": "runway_entry",
+      "x_ft": -1000.0,
+      "y_ft": -3000.0,
+      "name": "Runway Entry East",
+      "annotations": {"runway": "27L"}
+    },
+    "RE_W": {
+      "id": "RE_W",
+      "node_type": "runway_entry",
+      "x_ft": 1000.0,
+      "y_ft": -3000.0,
+      "name": "Runway Entry West",
+      "annotations": {"runway": "27L"}
+    },
+    "TAXI_A": {
+      "id": "TAXI_A",
+      "node_type": "taxi_point",
+      "x_ft": -2000.0,
+      "y_ft": -5000.0,
+      "name": "Taxiway Alpha",
+      "annotations": {"taxiway": "Alpha"}
+    },
+    "TAXI_B": {
+      "id": "TAXI_B",
+      "node_type": "taxi_point",
+      "x_ft": 2000.0,
+      "y_ft": -5000.0,
+      "name": "Taxiway Bravo",
+      "annotations": {"taxiway": "Bravo"}
+    },
+    "TAXI_C": {
+      "id": "TAXI_C",
+      "node_type": "taxi_point",
+      "x_ft": -3000.0,
+      "y_ft": -6000.0,
+      "name": "Taxiway Charlie",
+      "annotations": {"taxiway": "Charlie"}
+    },
+    "TAXI_D": {
+      "id": "TAXI_D",
+      "node_type": "taxi_point",
+      "x_ft": 3000.0,
+      "y_ft": -6000.0,
+      "name": "Taxiway Delta",
+      "annotations": {"taxiway": "Delta"}
+    },
+    "PB_1": {
+      "id": "PB_1",
+      "node_type": "pushback_spot",
+      "x_ft": -3500.0,
+      "y_ft": -7000.0,
+      "name": "Pushback Spot 1",
+      "annotations": {"stand": "101"}
+    },
+    "PB_2": {
+      "id": "PB_2",
+      "node_type": "pushback_spot",
+      "x_ft": -4500.0,
+      "y_ft": -7000.0,
+      "name": "Pushback Spot 2",
+      "annotations": {"stand": "102"}
+    },
+    "PB_3": {
+      "id": "PB_3",
+      "node_type": "pushback_spot",
+      "x_ft": 3500.0,
+      "y_ft": -7000.0,
+      "name": "Pushback Spot 3",
+      "annotations": {"stand": "103"}
+    },
+    "PB_4": {
+      "id": "PB_4",
+      "node_type": "pushback_spot",
+      "x_ft": 4500.0,
+      "y_ft": -7000.0,
+      "name": "Pushback Spot 4",
+      "annotations": {"stand": "104"}
+    },
+    "STAND_101": {
+      "id": "STAND_101",
+      "node_type": "stand",
+      "x_ft": -3500.0,
+      "y_ft": -7500.0,
+      "name": "Stand 101",
+      "annotations": {"gate_number": "101", "aircraft_type": "B738"}
+    },
+    "STAND_102": {
+      "id": "STAND_102",
+      "node_type": "stand",
+      "x_ft": -4500.0,
+      "y_ft": -7500.0,
+      "name": "Stand 102",
+      "annotations": {"gate_number": "102", "aircraft_type": "B738"}
+    },
+    "STAND_103": {
+      "id": "STAND_103",
+      "node_type": "stand",
+      "x_ft": 3500.0,
+      "y_ft": -7500.0,
+      "name": "Stand 103",
+      "annotations": {"gate_number": "103", "aircraft_type": "A320"}
+    },
+    "STAND_104": {
+      "id": "STAND_104",
+      "node_type": "stand",
+      "x_ft": 4500.0,
+      "y_ft": -7500.0,
+      "name": "Stand 104",
+      "annotations": {"gate_number": "104", "aircraft_type": "A320"}
+    },
+    "GATE_A1": {
+      "id": "GATE_A1",
+      "node_type": "gate",
+      "x_ft": -3500.0,
+      "y_ft": -8000.0,
+      "name": "Gate A1",
+      "annotations": {"gate_id": "A1", "terminal": "South"}
+    },
+    "GATE_A2": {
+      "id": "GATE_A2",
+      "node_type": "gate",
+      "x_ft": -4500.0,
+      "y_ft": -8000.0,
+      "name": "Gate A2",
+      "annotations": {"gate_id": "A2", "terminal": "South"}
+    },
+    "GATE_B1": {
+      "id": "GATE_B1",
+      "node_type": "gate",
+      "x_ft": 3500.0,
+      "y_ft": -8000.0,
+      "name": "Gate B1",
+      "annotations": {"gate_id": "B1", "terminal": "North"}
+    },
+    "GATE_B2": {
+      "id": "GATE_B2",
+      "node_type": "gate",
+      "x_ft": 4500.0,
+      "y_ft": -8000.0,
+      "name": "Gate B2",
+      "annotations": {"gate_id": "B2", "terminal": "North"}
+    }
+  },
+  "edges": [
+    {"from_node": "APP_FIX_27L", "to_node": "GLIDE_27L", "movement_type": "approach", "distance_ft": 25000.0, "max_speed_kt": 250.0},
+    {"from_node": "GLIDE_27L", "to_node": "THR_27L", "movement_type": "landing", "distance_ft": 15000.0, "max_speed_kt": 160.0},
+    {"from_node": "THR_27L", "to_node": "RWY_CENTER_27L", "movement_type": "taxi", "distance_ft": 2500.0, "max_speed_kt": 20.0},
+    {"from_node": "RWY_CENTER_27L", "to_node": "EXIT_E", "movement_type": "exit_runway", "distance_ft": 500.0, "max_speed_kt": 30.0, "one_way": true},
+    {"from_node": "RWY_CENTER_27L", "to_node": "EXIT_W", "movement_type": "exit_runway", "distance_ft": 500.0, "max_speed_kt": 30.0, "one_way": true},
+    {"from_node": "EXIT_E", "to_node": "HS_A", "movement_type": "taxi", "distance_ft": 300.0, "max_speed_kt": 20.0},
+    {"from_node": "EXIT_W", "to_node": "HS_B", "movement_type": "taxi", "distance_ft": 300.0, "max_speed_kt": 20.0},
+    {"from_node": "HS_A", "to_node": "TQ_E", "movement_type": "taxi", "distance_ft": 700.0, "max_speed_kt": 20.0},
+    {"from_node": "HS_B", "to_node": "TQ_W", "movement_type": "taxi", "distance_ft": 700.0, "max_speed_kt": 20.0},
+    {"from_node": "TQ_E", "to_node": "TAXI_A", "movement_type": "taxi", "distance_ft": 1500.0, "max_speed_kt": 25.0},
+    {"from_node": "TQ_W", "to_node": "TAXI_B", "movement_type": "taxi", "distance_ft": 1500.0, "max_speed_kt": 25.0},
+    {"from_node": "TAXI_A", "to_node": "TAXI_C", "movement_type": "taxi", "distance_ft": 1500.0, "max_speed_kt": 25.0},
+    {"from_node": "TAXI_B", "to_node": "TAXI_D", "movement_type": "taxi", "distance_ft": 1500.0, "max_speed_kt": 25.0},
+    {"from_node": "TAXI_C", "to_node": "PB_1", "movement_type": "taxi", "distance_ft": 1000.0, "max_speed_kt": 15.0},
+    {"from_node": "TAXI_C", "to_node": "PB_2", "movement_type": "taxi", "distance_ft": 1500.0, "max_speed_kt": 15.0},
+    {"from_node": "TAXI_D", "to_node": "PB_3", "movement_type": "taxi", "distance_ft": 1000.0, "max_speed_kt": 15.0},
+    {"from_node": "TAXI_D", "to_node": "PB_4", "movement_type": "taxi", "distance_ft": 1500.0, "max_speed_kt": 15.0},
+    {"from_node": "PB_1", "to_node": "STAND_101", "movement_type": "pushback", "distance_ft": 500.0, "max_speed_kt": 5.0},
+    {"from_node": "PB_2", "to_node": "STAND_102", "movement_type": "pushback", "distance_ft": 500.0, "max_speed_kt": 5.0},
+    {"from_node": "PB_3", "to_node": "STAND_103", "movement_type": "pushback", "distance_ft": 500.0, "max_speed_kt": 5.0},
+    {"from_node": "PB_4", "to_node": "STAND_104", "movement_type": "pushback", "distance_ft": 500.0, "max_speed_kt": 5.0},
+    {"from_node": "STAND_101", "to_node": "GATE_A1", "movement_type": "taxi", "distance_ft": 500.0, "max_speed_kt": 10.0},
+    {"from_node": "STAND_102", "to_node": "GATE_A2", "movement_type": "taxi", "distance_ft": 500.0, "max_speed_kt": 10.0},
+    {"from_node": "STAND_103", "to_node": "GATE_B1", "movement_type": "taxi", "distance_ft": 500.0, "max_speed_kt": 10.0},
+    {"from_node": "STAND_104", "to_node": "GATE_B2", "movement_type": "taxi", "distance_ft": 500.0, "max_speed_kt": 10.0},
+    {"from_node": "DQ_E", "to_node": "RE_E", "movement_type": "queue_join", "distance_ft": 1000.0, "max_speed_kt": 15.0},
+    {"from_node": "DQ_W", "to_node": "RE_W", "movement_type": "queue_join", "distance_ft": 1000.0, "max_speed_kt": 15.0},
+    {"from_node": "DQ_E", "to_node": "TQ_E", "movement_type": "taxi", "distance_ft": 500.0, "max_speed_kt": 20.0},
+    {"from_node": "DQ_W", "to_node": "TQ_W", "movement_type": "taxi", "distance_ft": 500.0, "max_speed_kt": 20.0},
+    {"from_node": "RE_E", "to_node": "RWY_CENTER_27L", "movement_type": "runway_transition", "distance_ft": 500.0, "max_speed_kt": 30.0, "one_way": true},
+    {"from_node": "RE_W", "to_node": "RWY_CENTER_27L", "movement_type": "runway_transition", "distance_ft": 500.0, "max_speed_kt": 30.0, "one_way": true}
+  ],
+  "runways": [
+    {
+      "id": "27L",
+      "threshold_x": 0.0,
+      "threshold_y": 0.0,
+      "heading_deg": 270.0,
+      "length_ft": 9850.0
+    }
+  ],
+  "gates": [
+    {"id": "A1", "x_ft": -3500.0, "y_ft": -8000.0, "heading_deg": 90.0, "gate_number": "A1"},
+    {"id": "A2", "x_ft": -4500.0, "y_ft": -8000.0, "heading_deg": 90.0, "gate_number": "A2"},
+    {"id": "B1", "x_ft": 3500.0, "y_ft": -8000.0, "heading_deg": 90.0, "gate_number": "B1"},
+    {"id": "B2", "x_ft": 4500.0, "y_ft": -8000.0, "heading_deg": 90.0, "gate_number": "B2"}
+  ],
+  "metadata": {
+    "code": "EGKK",
+    "name": "London Gatwick Airport",
+    "country": "UK",
+    "elevation_ft": "202"
+  }
+}
