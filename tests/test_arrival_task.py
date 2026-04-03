@@ -129,6 +129,7 @@ class TestArrivalTask:
 
         while not done and steps < max_steps:
             state = task.state_machine._state
+            callsign = list(state.aircraft_states.keys())[0]
             legal_actions = task.state_machine.get_legal_actions(state)
 
             if legal_actions:
@@ -136,13 +137,13 @@ class TestArrivalTask:
             elif state.phase == LifecyclePhase.DOCKING:
                 action = Action(
                     clearance_type=ClearanceType.TAXI,
-                    target_callsign="BAW123",
+                    target_callsign=callsign,
                     route=[],
                 )
             else:
                 action = Action(
                     clearance_type=ClearanceType.LANDING,
-                    target_callsign="BAW123",
+                    target_callsign=callsign,
                     runway="27L",
                 )
 
@@ -377,6 +378,7 @@ class TestArrivalIntegration:
 
         while not done and steps < max_steps:
             current_state = task.state_machine._state
+            callsign = list(current_state.aircraft_states.keys())[0]
             legal_actions = task.state_machine.get_legal_actions(current_state)
 
             if legal_actions:
@@ -384,13 +386,13 @@ class TestArrivalIntegration:
             elif current_state.phase == LifecyclePhase.DOCKING:
                 action = Action(
                     clearance_type=ClearanceType.TAXI,
-                    target_callsign="BAW123",
+                    target_callsign=callsign,
                     route=[],
                 )
             else:
                 action = Action(
                     clearance_type=ClearanceType.LANDING,
-                    target_callsign="BAW123",
+                    target_callsign=callsign,
                     runway="27L",
                 )
 
@@ -421,7 +423,8 @@ class TestArrivalIntegration:
         task = ArrivalTask(airport_schema=schema, seed=42)
         grader = ArrivalGrader()
 
-        task.reset(episode_id="unsafe-arrival-001")
+        state = task.reset(episode_id="unsafe-arrival-001")
+        callsign = list(state.aircraft_states.keys())[0]
 
         calc = RewardCalculator()
         episode_rewards = []
@@ -430,7 +433,7 @@ class TestArrivalIntegration:
             state, obs = task.step(
                 Action(
                     clearance_type=ClearanceType.LANDING,
-                    target_callsign="BAW123",
+                    target_callsign=callsign,
                     runway="27L",
                 )
             )
@@ -438,7 +441,7 @@ class TestArrivalIntegration:
                 state,
                 Action(
                     clearance_type=ClearanceType.LANDING,
-                    target_callsign="BAW123",
+                    target_callsign=callsign,
                     runway="27L",
                 ),
                 obs,
@@ -454,7 +457,7 @@ class TestArrivalIntegration:
         state, _ = task.step(
             Action(
                 clearance_type=ClearanceType.TAXI,
-                target_callsign="BAW123",
+                target_callsign=callsign,
                 route=["RWY_EXIT_1"],
             )
         )
@@ -463,7 +466,7 @@ class TestArrivalIntegration:
             state,
             Action(
                 clearance_type=ClearanceType.TAXI,
-                target_callsign="BAW123",
+                target_callsign=callsign,
                 route=["RWY_EXIT_1"],
             ),
             unsafe_obs,

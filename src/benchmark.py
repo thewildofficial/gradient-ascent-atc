@@ -11,6 +11,7 @@ from src.openenv_environment import OpenEnvEnvironment
 from src.tasks.arrival import ArrivalGrader
 from src.tasks.departure import DepartureGrader
 from src.tasks.integrated import IntegratedGrader
+from src.tasks.peak_traffic import PeakTrafficGrader
 from src.tasks.registry import TaskRegistry
 
 
@@ -29,6 +30,8 @@ def _get_grader(task_id: str) -> Any:
         return DepartureGrader()
     elif task_id == "integrated":
         return IntegratedGrader()
+    elif task_id == "peak_traffic":
+        return PeakTrafficGrader()
     raise KeyError(f"Unknown task: {task_id}")
 
 

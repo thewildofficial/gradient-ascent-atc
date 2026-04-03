@@ -6,7 +6,7 @@ import random
 import sys
 from typing import Any
 
-from openai import OpenAI
+import httpx
 
 from src.models import Action, ClearanceType
 from src.openenv_environment import OpenEnvEnvironment
@@ -15,13 +15,19 @@ from src.openenv_environment import OpenEnvEnvironment
 def _validate_env_vars() -> None:
     """Validate required environment variables are set."""
     missing = []
-    for var in ("API_BASE_URL", "MODEL_NAME", "HF_TOKEN"):
+    for var in ("API_BASE_URL", "MODEL_NAME"):
         if not os.environ.get(var):
             missing.append(var)
     if missing:
         raise EnvironmentError(
             f"Missing required environment variables: {', '.join(missing)}"
         )
+
+    use_random = os.environ.get("USE_RANDOM", "").lower() == "true"
+    api_base_url = os.environ.get("API_BASE_URL", "")
+    is_gemini = "gemini" in api_base_url.lower()
+    if not use_random and not is_gemini and not os.environ.get("HF_TOKEN"):
+        raise EnvironmentError("Missing required environment variable: HF_TOKEN")
 
 
 def _get_env(var: str) -> str:
@@ -35,7 +41,9 @@ class RandomAgent:
     def __init__(self, seed: int = 42) -> None:
         self._rng = random.Random(seed)
 
-    def select_action(self, legal_actions: list[Action]) -> Action | None:
+    def select_action(
+        self, legal_actions: list[Action], state_desc: str = "", prev_obs: Any = None
+    ) -> Action | None:
         """Select a random legal action.
 
         Args:
@@ -47,6 +55,90 @@ class RandomAgent:
         if not legal_actions:
             return None
         return self._rng.choice(legal_actions)
+
+
+class LLMAgent:
+    """LLM agent using OpenAI-compatible endpoint with dynamic auth."""
+
+    def __init__(self, api_key: str, base_url: str, model: str) -> None:
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+
+    async def chat(self, messages: list[dict]) -> str:
+        """Send chat request to LLM endpoint with appropriate auth.
+
+        Auth method depends on endpoint:
+        - Gemini (contains 'gemini'): use ?key= query param
+        - Groq (contains 'groq'): use Authorization: Bearer header
+        - Other OpenAI-compatible: use Authorization: Bearer header
+        """
+        is_gemini = "gemini" in self.base_url.lower()
+        headers = {"Content-Type": "application/json"}
+
+        if is_gemini:
+            url = f"{self.base_url}/chat/completions?key={self.api_key}"
+        else:
+            url = f"{self.base_url}/chat/completions"
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                url, json={"model": self.model, "messages": messages}, headers=headers
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"]
+
+    async def select_action(
+        self, legal_actions: list[Action], state_desc: str, prev_obs: Any = None
+    ) -> Action | None:
+        if not legal_actions:
+            return None
+
+        SYSTEM_PROMPT = """You are an expert ATC ground control agent. Aircraft lifecycle phases (in order):
+
+ARRIVAL: approach -> landing -> arrival_handoff -> taxi_in -> docking -> at_gate
+DEPARTURE: at_gate -> pushback -> taxi_out -> departure_queue -> takeoff -> departed
+
+Rules:
+- at_gate: After ~60s turnaround, MUST issue PUSHBACK first (never taxi before pushback)
+- pushback: issue TAXI with route to departure queue (e.g. taxiway A, taxiway B, departure_queue)
+- taxi_out: issue HOLD_SHORT at runway holding point before crossing active runway
+- departure_queue: wait, then issue LINE_UP when runway is clear for immediate departure
+- approach: issue LANDING clearance when aircraft is on final approach
+- arrival_handoff: issue TAXI with route to assigned gate (e.g. runway_exit, taxiway C, gate)
+- taxi_in: issue HOLD_SHORT before crossing any active runway
+
+Respond with ONLY the exact action string from the legal actions list. No explanation."""
+
+        prev_info = ""
+        if prev_obs and prev_obs.issues:
+            prev_info = f"\nPrevious action issues: {', '.join(prev_obs.issues)}. Adapt your next action accordingly."
+
+        action_strs = [
+            f"- {a.clearance_type.value} {a.target_callsign}" for a in legal_actions
+        ]
+        user_prompt = (
+            f"Current state: {state_desc}{prev_info}\n\nLegal actions:\n"
+            + "\n".join(action_strs)
+            + "\n\nRespond with ONLY the correct action string."
+        )
+
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ]
+        response = await self.chat(messages)
+
+        # Parse response and match to legal action
+        for action in legal_actions:
+            action_repr = f"{action.clearance_type.value} {action.target_callsign}"
+            if action_repr.lower() in response.lower():
+                return action
+
+        # Fallback to random if LLM response doesn't match
+        return random.choice(legal_actions)
 
 
 def _format_action(action: Action) -> str:
@@ -61,22 +153,20 @@ def _format_action(action: Action) -> str:
     parts = [action.clearance_type.value, action.target_callsign]
     if action.route:
         parts.append(",".join(action.route[:2]))
-    if action.pushback_direction:
-        parts.append(action.pushback_direction)
     return "|".join(parts)
 
 
 async def run_episode(
     task_id: str,
     model_name: str,
-    agent: RandomAgent,
+    agent: RandomAgent | LLMAgent,
 ) -> tuple[bool, int, float, list[float]]:
     """Run a single episode for a task.
 
     Args:
         task_id: Task identifier (departure, arrival, integrated).
         model_name: Model name for logging.
-        agent: Agent to use for action selection.
+        agent: Agent to use for action selection (RandomAgent or LLMAgent).
 
     Returns:
         Tuple of (success, step_count, total_score, list_of_rewards).
@@ -90,21 +180,25 @@ async def run_episode(
     error_msg: str | None = None
 
     try:
-        # Reset environment - must use await per requirements
         observation = await env.reset()
         rewards.append(observation.score)
+        prev_obs = observation
 
-        # Run episode loop
         while True:
             step_count += 1
 
-            # Get legal actions for current state
             state = env.state()
             machine = env._machine
             legal_actions = machine.get_legal_actions(machine._state)
 
-            # Select action - None means no legal actions available, wait
-            action = agent.select_action(legal_actions)
+            if isinstance(agent, LLMAgent):
+                state_desc = (
+                    f"phase={state.phase}, aircraft={list(state.aircraft.keys())}"
+                )
+                action = await agent.select_action(legal_actions, state_desc, prev_obs)
+            else:
+                action = agent.select_action(legal_actions)
+
             if action is None:
                 # No legal actions - create a no-op action to continue
                 action = Action(
@@ -114,9 +208,9 @@ async def run_episode(
                 )
             action_str = _format_action(action)
 
-            # Execute step
             try:
                 obs, reward, done = await env.step(action)
+                prev_obs = obs
                 rewards.append(reward)
 
                 # Check for terminal conditions
@@ -193,23 +287,21 @@ async def run_episode(
 async def main() -> int:
     """Main entry point for inference script."""
     try:
-        # Validate environment variables
         _validate_env_vars()
 
         model_name = _get_env("MODEL_NAME")
         api_base_url = _get_env("API_BASE_URL")
-        hf_token = _get_env("HF_TOKEN")
 
-        # Initialize OpenAI client (base_url and api_key as specified)
-        client = OpenAI(api_key=hf_token, base_url=api_base_url)
+        use_random = os.environ.get("USE_RANDOM", "").lower() == "true"
 
-        # Tasks to run
+        if use_random:
+            agent: RandomAgent | LLMAgent = RandomAgent(seed=42)
+        else:
+            hf_token = os.environ.get("HF_TOKEN", "")
+            agent = LLMAgent(api_key=hf_token, base_url=api_base_url, model=model_name)
+
         task_ids = ["departure", "arrival", "integrated"]
 
-        # Initialize deterministic baseline agent
-        agent = RandomAgent(seed=42)
-
-        # Run episodes sequentially
         for task_id in task_ids:
             await run_episode(task_id, model_name, agent)
 

@@ -133,61 +133,111 @@ class FullLifecycleStateMachine:
         self._route_index = 0
         self._pushback_complete = False
 
-        # Find approach fix and runway threshold from schema
-        approach_node = self._find_first_node_by_type("approach_fix")
-        threshold_node = self._find_first_node_by_type("landing_threshold")
-        gate_node = self._find_first_node_by_type("gate")
-        stand_node = self._find_first_node_by_type("stand")
+        # Load task-specific fixture from ScenarioFixtureFactory
+        from src.tasks.registry import ScenarioFixtureFactory
 
-        # Initialize aircraft at approach position
-        # Clamp to AircraftState validation limits (-10000 to 10000)
-        if approach_node:
-            x = max(-10000.0, min(10000.0, approach_node.x_ft))
-            y = max(-10000.0, min(10000.0, approach_node.y_ft))
+        try:
+            initial_state_dict, _ = ScenarioFixtureFactory.build(
+                task_id, self._seed or 42
+            )
+        except Exception:
+            # Fallback for unknown task_ids - use default approach behavior
+            initial_state_dict = None
+
+        if initial_state_dict:
+            # Use fixture-loaded initial state
+            phase = LifecyclePhase(initial_state_dict["phase"])
+            aircraft_dict = {}
+            for callsign, ac_data in initial_state_dict.get("aircraft", {}).items():
+                aircraft_dict[callsign] = AircraftState(**ac_data)
+
+            self._state = LifecycleState(
+                phase=phase,
+                aircraft_states=aircraft_dict,
+                episode_id=episode_id,
+                step_count=0,
+                task_id=task_id,
+                completed_phases=[],
+                metadata=initial_state_dict.get("metadata", {}),
+            )
+
+            # Set current_node based on phase
+            if phase == LifecyclePhase.TAXI_IN or phase == LifecyclePhase.TAXI_OUT:
+                if self._state.aircraft_states:
+                    first_ac = next(iter(self._state.aircraft_states.values()))
+                    self._current_node = first_ac.assigned_gate or "GATE_A1"
+            elif phase == LifecyclePhase.DEPARTURE_QUEUE:
+                self._current_node = "DEPARTURE_QUEUE"
+            elif phase == LifecyclePhase.AT_GATE:
+                if self._state.aircraft_states:
+                    first_ac = next(iter(self._state.aircraft_states.values()))
+                    self._current_node = first_ac.assigned_gate or "GATE_A1"
+            else:
+                self._current_node = None
+
+            self._enter_phase(phase)
         else:
-            x, y = 0.0, 5000.0
+            # Fallback: original hardcoded approach behavior
+            # Find approach fix and runway threshold from schema
+            approach_node = self._find_first_node_by_type("approach_fix")
+            threshold_node = self._find_first_node_by_type("landing_threshold")
+            gate_node = self._find_first_node_by_type("gate")
+            stand_node = self._find_first_node_by_type("stand")
 
-        # Get runway heading from first runway
-        runway_heading = 270.0
-        if self._schema.runways:
-            runway_heading = self._schema.runways[0].get("heading_deg", 270.0)
+            # Initialize aircraft at approach position
+            # Clamp to AircraftState validation limits (-10000 to 10000)
+            if approach_node:
+                x = max(-10000.0, min(10000.0, approach_node.x_ft))
+                y = max(-10000.0, min(10000.0, approach_node.y_ft))
+            else:
+                x, y = 0.0, 5000.0
 
-        aircraft = AircraftState(
-            callsign="BAW123",
-            x_ft=x,
-            y_ft=y,
-            heading_deg=runway_heading,
-            altitude_ft=5000.0,
-            speed_kt=250.0,
-            phase=LifecyclePhase.APPROACH,
-            assigned_runway=self._schema.runways[0]["id"]
-            if self._schema.runways
-            else "27L",
-            assigned_gate=gate_node.id if gate_node else "GATE_A1",
-        )
+            # Get runway heading from first runway
+            runway_heading = 270.0
+            if self._schema.runways:
+                runway_heading = self._schema.runways[0].get("heading_deg", 270.0)
 
-        self._state = LifecycleState(
-            phase=LifecyclePhase.APPROACH,
-            aircraft_states={aircraft.callsign: aircraft},
-            episode_id=episode_id,
-            step_count=0,
-            task_id=task_id,
-            completed_phases=[],
-            metadata={
-                "approach_node": approach_node.id if approach_node else "APP_FIX_27L",
-                "threshold_node": threshold_node.id if threshold_node else "THR_27L",
-                "gate_node": gate_node.id if gate_node else "GATE_A1",
-                "stand_node": stand_node.id if stand_node else "STAND_101",
-                "runway_heading": runway_heading,
-                "ground_frequency_confirmed": False,
-                "pushback_direction": None,
-                "taxi_route": [],
-                "line_up_confirmed": False,
-                "takeoff_confirmed": False,
-            },
-        )
-        self._current_node = approach_node.id if approach_node else "APP_FIX_27L"
-        self._enter_phase(LifecyclePhase.APPROACH)
+            aircraft = AircraftState(
+                callsign="BAW123",
+                x_ft=x,
+                y_ft=y,
+                heading_deg=runway_heading,
+                altitude_ft=5000.0,
+                speed_kt=250.0,
+                phase=LifecyclePhase.APPROACH,
+                assigned_runway=self._schema.runways[0]["id"]
+                if self._schema.runways
+                else "27L",
+                assigned_gate=gate_node.id if gate_node else "GATE_A1",
+            )
+
+            self._state = LifecycleState(
+                phase=LifecyclePhase.APPROACH,
+                aircraft_states={aircraft.callsign: aircraft},
+                episode_id=episode_id,
+                step_count=0,
+                task_id=task_id,
+                completed_phases=[],
+                metadata={
+                    "approach_node": approach_node.id
+                    if approach_node
+                    else "APP_FIX_27L",
+                    "threshold_node": threshold_node.id
+                    if threshold_node
+                    else "THR_27L",
+                    "gate_node": gate_node.id if gate_node else "GATE_A1",
+                    "stand_node": stand_node.id if stand_node else "STAND_101",
+                    "runway_heading": runway_heading,
+                    "ground_frequency_confirmed": False,
+                    "pushback_direction": None,
+                    "taxi_route": [],
+                    "line_up_confirmed": False,
+                    "takeoff_confirmed": False,
+                },
+            )
+            self._current_node = approach_node.id if approach_node else "APP_FIX_27L"
+            self._enter_phase(LifecyclePhase.APPROACH)
+
         return self._state
 
     def step(self, action: Action) -> tuple[LifecycleState, Observation]:
@@ -563,7 +613,12 @@ class FullLifecycleStateMachine:
                     self._route_index += 1
                     if self._route_index >= len(action.route):
                         # Reached end of route - check if at assigned gate
-                        gate_node = self._state.metadata.get("gate_node", "GATE_A1")
+                        aircraft = self._get_primary_aircraft()
+                        gate_node = (
+                            aircraft.assigned_gate
+                            if aircraft
+                            else self._state.metadata.get("gate_node", "GATE_A1")
+                        )
                         if (
                             target_node_id == gate_node
                             or target_node.node_type.value in ("gate", "stand")
@@ -613,10 +668,11 @@ class FullLifecycleStateMachine:
         self._turnaround_timer += DEFAULT_DT_S
 
         if self._turnaround_timer < TURNAROUND_DELAY_S:
-            return 0.0, []
+            remaining = TURNAROUND_DELAY_S - self._turnaround_timer
+            return 0.0, [f"turnaround_delay:{remaining:.0f}s_remaining"]
 
         if action.clearance_type == ClearanceType.PUSHBACK:
-            if action.pushback_direction:
+            if action.pushback_direction is not None:
                 next_phase = LifecyclePhase.PUSHBACK
                 self._state.phase = next_phase
                 self._state.completed_phases.append(LifecyclePhase.AT_GATE)
@@ -813,7 +869,7 @@ class FullLifecycleStateMachine:
         if not aircraft:
             return []
         # Build route to assigned gate
-        gate_node = state.metadata.get("gate_node", "GATE_A1")
+        gate_node = aircraft.assigned_gate or state.metadata.get("gate_node", "GATE_A1")
         return [
             Action(
                 clearance_type=ClearanceType.TAXI,

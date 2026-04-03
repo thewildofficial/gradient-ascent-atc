@@ -184,6 +184,8 @@ class TestIntegratedFullLifecycle:
 
         aircraft = list(state.aircraft_states.values())[0]
         callsign = aircraft.callsign
+        # Override assigned_gate from fixture (GATE_C3) to a valid gate in schema
+        aircraft.assigned_gate = "GATE_A1"
 
         target_phases = {
             LifecyclePhase.LANDING,
@@ -291,6 +293,7 @@ class TestIntegratedFullLifecycle:
 
         aircraft = list(state.aircraft_states.values())[0]
         callsign = aircraft.callsign
+        aircraft.assigned_gate = "GATE_A1"
 
         reached_at_gate = False
         at_gate_entry_step = 0

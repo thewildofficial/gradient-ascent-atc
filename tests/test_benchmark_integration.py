@@ -84,14 +84,15 @@ class TestGraderScoreRanges:
 class TestBenchmarkInterface:
     """Test benchmark module interface."""
 
-    def test_list_tasks_returns_three_tasks(self):
+    def test_list_tasks_returns_four_tasks(self):
         tasks = list_tasks()
-        assert len(tasks) == 3
+        assert len(tasks) == 4
 
         task_ids = [t["task_id"] for t in tasks]
         assert "arrival" in task_ids
         assert "departure" in task_ids
         assert "integrated" in task_ids
+        assert "peak_traffic" in task_ids
 
     def test_list_tasks_returns_correct_metadata(self):
         tasks = list_tasks()
@@ -123,10 +124,11 @@ class TestBenchmarkInterface:
     def test_run_all_returns_all_scores_in_range(self):
         scores = run_all()
 
-        assert len(scores) == 3
+        assert len(scores) == 4
         assert "arrival" in scores
         assert "departure" in scores
         assert "integrated" in scores
+        assert "peak_traffic" in scores
 
         for task_id, score in scores.items():
             assert 0.0 <= score <= 1.0, (

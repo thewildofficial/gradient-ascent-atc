@@ -116,6 +116,16 @@ TaskRegistry.register(
     )
 )
 
+TaskRegistry.register(
+    TaskInfo(
+        task_id="peak_traffic",
+        name="Peak Traffic",
+        description="3 aircraft simultaneously — prevent collisions, coordinate all to completion",
+        difficulty="hard",
+        initial_state_fn="build_peak_traffic_fixture",
+    )
+)
+
 
 class ScenarioFixtureFactory:
     """Factory for creating deterministic scenario fixtures.
@@ -159,6 +169,8 @@ class ScenarioFixtureFactory:
             return cls.build_arrival_fixture(seed)
         elif fn_name == "build_integrated_fixture":
             return cls.build_integrated_fixture(seed)
+        elif fn_name == "build_peak_traffic_fixture":
+            return cls.build_peak_traffic_fixture(seed)
         else:
             raise ValueError(f"Unknown initial_state_fn: {fn_name}")
 
@@ -318,13 +330,90 @@ class ScenarioFixtureFactory:
                 "runway": None,
             },
             {
-                "clearance_type": ClearanceType.HOLD_SHORT,
+                "clearance_type": ClearanceType.TAKEOFF,
                 "target_callsign": callsign,
                 "route": [],
                 "readback_required": True,
                 "pushback_direction": None,
-                "hold_short": True,
-                "runway": None,
+                "hold_short": False,
+                "runway": "RWY27L",
+            },
+        ]
+
+        return initial_state, actions
+
+    @classmethod
+    def build_peak_traffic_fixture(cls, seed: int) -> tuple[dict, list[dict]]:
+        """Build a peak traffic scenario fixture with 3 aircraft.
+
+        Args:
+            seed: Seed for deterministic scenario generation.
+
+        Returns:
+            Tuple of (initial_state_dict, action_sequence_list).
+        """
+        rng = cls._seeded_random(seed)
+
+        airline_prefixes = ["BAW", "EZY", "AFR", "DLH", "UAE"]
+        callsigns = [
+            f"{rng.choice(airline_prefixes)}{rng.randint(100, 999)}" for _ in range(3)
+        ]
+
+        initial_state = {
+            "phase": LifecyclePhase.APPROACH,
+            "aircraft": {
+                callsigns[0]: {
+                    "callsign": callsigns[0],
+                    "x_ft": rng.uniform(-5000.0, 5000.0),
+                    "y_ft": rng.uniform(-5000.0, 5000.0),
+                    "heading_deg": rng.uniform(0.0, 360.0),
+                    "altitude_ft": rng.uniform(2000.0, 3000.0),
+                    "speed_kt": rng.uniform(150.0, 250.0),
+                    "phase": LifecyclePhase.APPROACH,
+                    "assigned_runway": "RWY27L",
+                    "assigned_gate": "GATE_B2",
+                    "wake_category": rng.choice(["M", "H", "L"]),
+                },
+                callsigns[1]: {
+                    "callsign": callsigns[1],
+                    "x_ft": rng.uniform(-5000.0, 5000.0),
+                    "y_ft": rng.uniform(-5000.0, 5000.0),
+                    "heading_deg": rng.uniform(0.0, 360.0),
+                    "altitude_ft": 0.0,
+                    "speed_kt": 20.0,
+                    "phase": LifecyclePhase.TAXI_IN,
+                    "assigned_runway": "RWY27L",
+                    "assigned_gate": "GATE_A1",
+                    "wake_category": rng.choice(["M", "H", "L"]),
+                },
+                callsigns[2]: {
+                    "callsign": callsigns[2],
+                    "x_ft": 0.0,
+                    "y_ft": 0.0,
+                    "heading_deg": rng.uniform(0.0, 360.0),
+                    "altitude_ft": 0.0,
+                    "speed_kt": 0.0,
+                    "phase": LifecyclePhase.AT_GATE,
+                    "assigned_runway": "RWY27L",
+                    "assigned_gate": "GATE_C3",
+                    "wake_category": rng.choice(["M", "H", "L"]),
+                },
+            },
+            "episode_id": f"peak-{seed}",
+            "step_count": 0,
+            "task_id": "peak_traffic",
+            "metadata": {"seed": seed, "scenario": "peak_traffic"},
+        }
+
+        actions = [
+            {
+                "clearance_type": ClearanceType.LANDING,
+                "target_callsign": callsigns[0],
+                "route": [],
+                "readback_required": True,
+                "pushback_direction": None,
+                "hold_short": False,
+                "runway": "RWY27L",
             },
         ]
 

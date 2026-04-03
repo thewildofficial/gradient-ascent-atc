@@ -10,9 +10,9 @@ from src.tasks.registry import (
 
 
 class TestTaskRegistry:
-    def test_exactly_three_tasks_registered(self):
+    def test_exactly_four_tasks_registered(self):
         tasks = TaskRegistry.list_tasks()
-        assert len(tasks) == 3
+        assert len(tasks) == 4
 
     def test_departure_task_is_easy(self):
         task = TaskRegistry.get("departure")
@@ -37,8 +37,10 @@ class TestTaskRegistry:
 
     def test_list_by_difficulty_hard(self):
         hard_tasks = TaskRegistry.list_by_difficulty("hard")
-        assert len(hard_tasks) == 1
-        assert hard_tasks[0].task_id == "arrival"
+        assert len(hard_tasks) == 2
+        hard_ids = [t.task_id for t in hard_tasks]
+        assert "arrival" in hard_ids
+        assert "peak_traffic" in hard_ids
 
     def test_list_by_difficulty_medium(self):
         medium_tasks = TaskRegistry.list_by_difficulty("medium")

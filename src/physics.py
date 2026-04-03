@@ -3,6 +3,8 @@
 import math
 from typing import Dict
 
+from src.models import AircraftState
+
 GLIDE_SLOPE_DEG = 3.0
 MAX_DESCENT_RATE_FPM = 3000
 STD_DESCENT_RATE_FPM = 1500
@@ -109,3 +111,38 @@ def WakeCategorySpacing(
     if key in _WAKE_SPACING:
         return _WAKE_SPACING[key]
     return 5000
+
+
+COLLISION_DISTANCE_FT = 500.0
+
+
+def check_collision(ac1: AircraftState, ac2: AircraftState) -> bool:
+    """Return True if two aircraft are in collision distance.
+
+    Collision threshold: 500 ft horizontal for same-node proximity.
+    Wake turbulence separation is tracked separately.
+    """
+    dx = ac1.x_ft - ac2.x_ft
+    dy = ac1.y_ft - ac2.y_ft
+    dist = (dx**2 + dy**2) ** 0.5
+    return dist < COLLISION_DISTANCE_FT
+
+
+def check_all_collisions(
+    aircraft_states: dict[str, AircraftState],
+) -> list[tuple[str, str]]:
+    """Check all pairs of aircraft for collisions.
+
+    Args:
+        aircraft_states: Dict mapping callsign to AircraftState.
+
+    Returns:
+        List of tuples containing pairs of callsigns that are in collision.
+    """
+    collisions: list[tuple[str, str]] = []
+    callsigns = list(aircraft_states.keys())
+    for i, cs1 in enumerate(callsigns):
+        for cs2 in callsigns[i + 1 :]:
+            if check_collision(aircraft_states[cs1], aircraft_states[cs2]):
+                collisions.append((cs1, cs2))
+    return collisions

@@ -66,8 +66,9 @@ class TestReset:
         """Test that reset creates an aircraft in the state."""
         state = sm.reset(task_id="arrival", episode_id="ep-1")
         assert len(state.aircraft_states) == 1
-        aircraft = list(state.aircraft_states.values())[0]
-        assert aircraft.callsign == "BAW123"
+        callsign = list(state.aircraft_states.keys())[0]
+        aircraft = state.aircraft_states[callsign]
+        assert aircraft.callsign == callsign
         assert aircraft.phase == LifecyclePhase.APPROACH
 
     def test_reset_stores_ids(self, sm: FullLifecycleStateMachine) -> None:
@@ -82,13 +83,14 @@ class TestReset:
         sm2 = FullLifecycleStateMachine(schema=gatwick_schema, seed=42)
         state1 = sm1.reset(task_id="arrival", episode_id="ep-1")
         state2 = sm2.reset(task_id="arrival", episode_id="ep-1")
+        callsign = list(state1.aircraft_states.keys())[0]
         assert (
-            state1.aircraft_states["BAW123"].x_ft
-            == state2.aircraft_states["BAW123"].x_ft
+            state1.aircraft_states[callsign].x_ft
+            == state2.aircraft_states[callsign].x_ft
         )
         assert (
-            state1.aircraft_states["BAW123"].y_ft
-            == state2.aircraft_states["BAW123"].y_ft
+            state1.aircraft_states[callsign].y_ft
+            == state2.aircraft_states[callsign].y_ft
         )
 
 
@@ -187,10 +189,11 @@ class TestIllegalTransitions:
     def test_skip_phase_rejected(self, sm: FullLifecycleStateMachine) -> None:
         """Test that skipping phases is rejected."""
         sm.reset(task_id="arrival", episode_id="ep-1")
+        callsign = list(sm._state.aircraft_states.keys())[0]
         # Try to do a taxi action while in APPROACH phase
         illegal_action = Action(
             clearance_type=ClearanceType.TAXI,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             route=["GATE_A1"],
         )
         state, obs = sm.step(illegal_action)
@@ -202,10 +205,11 @@ class TestIllegalTransitions:
         """Test that wrong clearance type is rejected."""
         sm.reset(task_id="arrival", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.LANDING
+        callsign = list(sm._state.aircraft_states.keys())[0]
         # Try pushback while in LANDING
         illegal_action = Action(
             clearance_type=ClearanceType.PUSHBACK,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             pushback_direction="back",
         )
         state, obs = sm.step(illegal_action)
@@ -217,10 +221,11 @@ class TestIllegalTransitions:
         """Test that takeoff without line-up is rejected."""
         sm.reset(task_id="departure", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.DEPARTURE_QUEUE
+        callsign = list(sm._state.aircraft_states.keys())[0]
         # Try takeoff without line_up first
         illegal_action = Action(
             clearance_type=ClearanceType.TAKEOFF,
-            target_callsign="BAW123",
+            target_callsign=callsign,
         )
         state, obs = sm.step(illegal_action)
         assert obs.result == "illegal_transition"
@@ -234,11 +239,12 @@ class TestPhaseTransitions:
     ) -> None:
         """Test APPROACH to LANDING transition at altitude threshold."""
         sm.reset(task_id="arrival", episode_id="ep-1")
-        aircraft = list(sm._state.aircraft_states.values())[0]
+        callsign = list(sm._state.aircraft_states.keys())[0]
+        aircraft = sm._state.aircraft_states[callsign]
         aircraft.altitude_ft = 40.0  # Below threshold
         action = Action(
             clearance_type=ClearanceType.LANDING,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             runway="27L",
         )
         state, obs = sm.step(action)
@@ -249,12 +255,13 @@ class TestPhaseTransitions:
         """Test LANDING to ARRIVAL_HANDOFF transition."""
         sm.reset(task_id="arrival", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.LANDING
+        callsign = list(sm._state.aircraft_states.keys())[0]
         # Force aircraft to end of runway
-        aircraft = list(sm._state.aircraft_states.values())[0]
+        aircraft = sm._state.aircraft_states[callsign]
         aircraft.y_ft = -3000.0  # Past runway end
         action = Action(
             clearance_type=ClearanceType.LANDING,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             runway="27L",
         )
         state, obs = sm.step(action)
@@ -265,9 +272,10 @@ class TestPhaseTransitions:
         """Test ARRIVAL_HANDOFF to TAXI_IN transition."""
         sm.reset(task_id="arrival", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.ARRIVAL_HANDOFF
+        callsign = list(sm._state.aircraft_states.keys())[0]
         action = Action(
             clearance_type=ClearanceType.TAXI,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             route=[],
         )
         state, obs = sm.step(action)
@@ -278,14 +286,16 @@ class TestPhaseTransitions:
         """Test TAXI_IN to DOCKING transition."""
         sm.reset(task_id="arrival", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.TAXI_IN
-        sm._state.metadata["gate_node"] = "GATE_A1"
+        callsign = list(sm._state.aircraft_states.keys())[0]
+        # Set assigned_gate to match the route destination
+        aircraft = sm._state.aircraft_states[callsign]
+        aircraft.assigned_gate = "GATE_A1"
         action = Action(
             clearance_type=ClearanceType.TAXI,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             route=["GATE_A1"],
         )
         # Simulate reaching the gate
-        aircraft = list(sm._state.aircraft_states.values())[0]
         aircraft.x_ft = -3500.0
         aircraft.y_ft = -8000.0
         state, obs = sm.step(action)
@@ -296,12 +306,13 @@ class TestPhaseTransitions:
         """Test DOCKING to AT_GATE transition after timer."""
         sm.reset(task_id="arrival", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.DOCKING
+        callsign = list(sm._state.aircraft_states.keys())[0]
         # Simulate docking timer completion (30+ steps)
         sm._docking_timer = 31.0
         state, obs = sm.step(
             Action(
                 clearance_type=ClearanceType.TAXI,
-                target_callsign="BAW123",
+                target_callsign=callsign,
                 route=[],
             )
         )
@@ -312,10 +323,11 @@ class TestPhaseTransitions:
         """Test AT_GATE to PUSHBACK transition after 60s turnaround delay."""
         sm.reset(task_id="departure", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.AT_GATE
+        callsign = list(sm._state.aircraft_states.keys())[0]
         # Advance 59 steps (timer reaches 59s); the 60th step (actual PUSHBACK) triggers transition
         wait_action = Action(
             clearance_type=ClearanceType.PUSHBACK,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             pushback_direction="back",
         )
         for _ in range(59):
@@ -323,7 +335,7 @@ class TestPhaseTransitions:
         # Now pushback should succeed
         pushback_action = Action(
             clearance_type=ClearanceType.PUSHBACK,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             pushback_direction="back",
         )
         state, obs = sm.step(pushback_action)
@@ -334,55 +346,59 @@ class TestPhaseTransitions:
 class TestFullLifecycleTraversal:
     """Tests for full lifecycle traversal."""
 
-    def _descend_to_threshold(self, sm: FullLifecycleStateMachine) -> None:
+    def _descend_to_threshold(
+        self, sm: FullLifecycleStateMachine, callsign: str
+    ) -> None:
         """Helper to descend aircraft to landing threshold."""
-        aircraft = list(sm._state.aircraft_states.values())[0]
+        aircraft = sm._state.aircraft_states[callsign]
         aircraft.altitude_ft = 40.0
 
-    def _reach_runway_end(self, sm: FullLifecycleStateMachine) -> None:
+    def _reach_runway_end(self, sm: FullLifecycleStateMachine, callsign: str) -> None:
         """Helper to move aircraft past runway end."""
-        aircraft = list(sm._state.aircraft_states.values())[0]
+        aircraft = sm._state.aircraft_states[callsign]
         aircraft.y_ft = -3000.0
 
-    def _reach_gate(self, sm: FullLifecycleStateMachine) -> None:
+    def _reach_gate(self, sm: FullLifecycleStateMachine, callsign: str) -> None:
         """Helper to move aircraft to gate."""
-        aircraft = list(sm._state.aircraft_states.values())[0]
+        aircraft = sm._state.aircraft_states[callsign]
         aircraft.x_ft = -3500.0
         aircraft.y_ft = -8000.0
 
     def test_full_arrival_lifecycle(self, sm: FullLifecycleStateMachine) -> None:
         """Test complete arrival lifecycle: approach to at_gate."""
         sm.reset(task_id="arrival", episode_id="ep-1")
+        callsign = list(sm._state.aircraft_states.keys())[0]
 
         # APPROACH -> LANDING
-        self._descend_to_threshold(sm)
+        self._descend_to_threshold(sm, callsign)
         action = Action(
-            clearance_type=ClearanceType.LANDING, target_callsign="BAW123", runway="27L"
+            clearance_type=ClearanceType.LANDING, target_callsign=callsign, runway="27L"
         )
         state, obs = sm.step(action)
         assert state.phase == LifecyclePhase.LANDING
 
         # LANDING -> ARRIVAL_HANDOFF
-        self._reach_runway_end(sm)
+        self._reach_runway_end(sm, callsign)
         action = Action(
-            clearance_type=ClearanceType.LANDING, target_callsign="BAW123", runway="27L"
+            clearance_type=ClearanceType.LANDING, target_callsign=callsign, runway="27L"
         )
         state, obs = sm.step(action)
         assert state.phase == LifecyclePhase.ARRIVAL_HANDOFF
 
         # ARRIVAL_HANDOFF -> TAXI_IN
         action = Action(
-            clearance_type=ClearanceType.TAXI, target_callsign="BAW123", route=[]
+            clearance_type=ClearanceType.TAXI, target_callsign=callsign, route=[]
         )
         state, obs = sm.step(action)
         assert state.phase == LifecyclePhase.TAXI_IN
 
         # TAXI_IN -> DOCKING (need route to gate)
-        sm._state.metadata["gate_node"] = "GATE_A1"
-        self._reach_gate(sm)
+        aircraft = sm._state.aircraft_states[callsign]
+        aircraft.assigned_gate = "GATE_A1"
+        self._reach_gate(sm, callsign)
         action = Action(
             clearance_type=ClearanceType.TAXI,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             route=["GATE_A1"],
         )
         state, obs = sm.step(action)
@@ -391,6 +407,7 @@ class TestFullLifecycleTraversal:
     def test_full_departure_lifecycle(self, sm: FullLifecycleStateMachine) -> None:
         """Test complete departure lifecycle: pushback to departed."""
         sm.reset(task_id="departure", episode_id="ep-1")
+        callsign = list(sm._state.aircraft_states.keys())[0]
 
         # Set up at AT_GATE phase
         sm._state.phase = LifecyclePhase.AT_GATE
@@ -399,7 +416,7 @@ class TestFullLifecycleTraversal:
         # Advance 59 steps (timer reaches 59s); the 60th step (actual PUSHBACK) triggers transition
         wait_action = Action(
             clearance_type=ClearanceType.PUSHBACK,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             pushback_direction="back",
         )
         for _ in range(59):
@@ -408,19 +425,19 @@ class TestFullLifecycleTraversal:
         # AT_GATE -> PUSHBACK
         action = Action(
             clearance_type=ClearanceType.PUSHBACK,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             pushback_direction="back",
         )
         state, obs = sm.step(action)
         assert state.phase == LifecyclePhase.PUSHBACK
 
         # PUSHBACK -> TAXI_OUT
-        aircraft = list(sm._state.aircraft_states.values())[0]
+        aircraft = sm._state.aircraft_states[callsign]
         aircraft.y_ft = -600.0  # Moved back
         sm._state.metadata["stand_node"] = "STAND_101"
         action = Action(
             clearance_type=ClearanceType.PUSHBACK,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             pushback_direction="back",
         )
         state, obs = sm.step(action)
@@ -432,18 +449,18 @@ class TestFullLifecycleTraversal:
         sm._current_node = "DQ_E"
         action = Action(
             clearance_type=ClearanceType.TAXI,
-            target_callsign="BAW123",
+            target_callsign=callsign,
             route=["DQ_E", "RE_E"],
         )
         state, obs = sm.step(action)
         assert state.phase == LifecyclePhase.DEPARTURE_QUEUE
 
         # DEPARTURE_QUEUE -> TAKEOFF (need LINE_UP then TAKEOFF)
-        action = Action(clearance_type=ClearanceType.LINE_UP, target_callsign="BAW123")
+        action = Action(clearance_type=ClearanceType.LINE_UP, target_callsign=callsign)
         state, obs = sm.step(action)
         assert state.phase == LifecyclePhase.DEPARTURE_QUEUE  # Still in queue
 
-        action = Action(clearance_type=ClearanceType.TAKEOFF, target_callsign="BAW123")
+        action = Action(clearance_type=ClearanceType.TAKEOFF, target_callsign=callsign)
         state, obs = sm.step(action)
         assert state.phase == LifecyclePhase.TAKEOFF
 
@@ -456,8 +473,9 @@ class TestRewardSignals:
         sm.reset(task_id="arrival", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.DOCKING
         sm._docking_timer = 31.0  # Docking complete
+        callsign = list(sm._state.aircraft_states.keys())[0]
         action = Action(
-            clearance_type=ClearanceType.TAXI, target_callsign="BAW123", route=[]
+            clearance_type=ClearanceType.TAXI, target_callsign=callsign, route=[]
         )
         state, obs = sm.step(action)
         assert obs.score == 0.1
@@ -465,9 +483,10 @@ class TestRewardSignals:
     def test_illegal_transition_penalty(self, sm: FullLifecycleStateMachine) -> None:
         """Test that illegal transitions earn 0.0 score."""
         sm.reset(task_id="arrival", episode_id="ep-1")
+        callsign = list(sm._state.aircraft_states.keys())[0]
         illegal_action = Action(
             clearance_type=ClearanceType.TAKEOFF,
-            target_callsign="BAW123",
+            target_callsign=callsign,
         )
         state, obs = sm.step(illegal_action)
         assert obs.score == 0.0
@@ -476,13 +495,15 @@ class TestRewardSignals:
         """Test that DEPARTED state returns score of 1.0."""
         sm.reset(task_id="arrival", episode_id="ep-1")
         sm._state.phase = LifecyclePhase.DEPARTED
-        action = Action(clearance_type=ClearanceType.TAKEOFF, target_callsign="BAW123")
+        callsign = list(sm._state.aircraft_states.keys())[0]
+        action = Action(clearance_type=ClearanceType.TAKEOFF, target_callsign=callsign)
         state, obs = sm.step(action)
         assert obs.score == 1.0
 
     def test_cumulative_rewards(self, sm: FullLifecycleStateMachine) -> None:
         """Test that rewards accumulate across successful transitions."""
         sm.reset(task_id="arrival", episode_id="ep-1")
+        callsign = list(sm._state.aircraft_states.keys())[0]
 
         # Make several transitions and track cumulative rewards
         total_reward = 0.0
@@ -491,7 +512,7 @@ class TestRewardSignals:
         sm._state.phase = LifecyclePhase.DOCKING
         sm._docking_timer = 31.0
         action = Action(
-            clearance_type=ClearanceType.TAXI, target_callsign="BAW123", route=[]
+            clearance_type=ClearanceType.TAXI, target_callsign=callsign, route=[]
         )
         state, obs = sm.step(action)
         total_reward += obs.score
