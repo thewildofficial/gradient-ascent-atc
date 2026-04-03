@@ -34,6 +34,11 @@ dashboard.html
 *.png
 *.jpg
 
+# Environment
+.env
+.env.*
+*.env
+
 # OS
 .DS_Store
 Thumbs.db
